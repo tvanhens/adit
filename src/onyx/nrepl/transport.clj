@@ -10,7 +10,6 @@
   (reify
     t/Transport
     (recv [this] (throw-unsupported))
-    (recv [this] (throw-unsupported))
+    (recv [this timeout] (throw-unsupported))
     (send [this msg]
-      (extensions/write-log-entry
-       log (entry/create-log-entry :nrepl-msg-send {:msg msg})))))
+      (extensions/write-log-entry log (entry/create-log-entry :nrepl-msg msg)))))
