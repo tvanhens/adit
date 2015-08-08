@@ -10,7 +10,7 @@
   (a/close! ch)
   (a/reduce (constantly nil) nil ch))
 
-(defn ->nrepl-msg-xf [direction]
+(defn nrepl-msg-xf [direction]
   {:pre [(#{:in :out} direction)]}
   (comp (filter (comp #{:nrepl-msg} :fn))
         (filter (comp #{direction} :direction :args))
@@ -18,7 +18,7 @@
         (map #(dissoc % :direction))))
 
 (defn log-nrepl-server [peer-config]
-  (let [in-msg (a/chan 10 (->nrepl-msg-xf :in))
+  (let [in-msg (a/chan 10 (nrepl-msg-xf :in))
         {:keys [env]} (onyx/subscribe-to-log peer-config in-msg)]
     (a/go-loop []
       (when-let [msg (a/<! in-msg)]
