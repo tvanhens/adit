@@ -41,17 +41,25 @@
 
 (use-fixtures :once onyx-fixture)
 
-(deftest zk-test
-  (testing "can grab information from zookeeper"
-    (let [ch (a/chan 10)
+(deftest write-to-log
+  (testing "writing nrepl messages to the log"
+    (let [ch (a/chan 10 (filter (comp #{:nrepl-msg} :fn)))
           {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
-          red-ch (a/reduce (fn [_ x] (>pprint x)) nil ch)]
+          r-ch (a/reduce (fn [acc x]
+                           (when (= :done (:args x))
+                                     (a/close! ch))
+                           (conj acc (:args x)))
+                         [] ch)]
       (extensions/write-log-entry
        (:log env)
-       (entry/create-log-entry :nrepl-msg "blah 1"))
+       (entry/create-log-entry :nrepl-msg 1))
       (extensions/write-log-entry
        (:log env)
-       (entry/create-log-entry :nrepl-msg "blah 2"))
-      (a/<!! (a/timeout 5000))
-      (a/close! ch)
-      (a/<!! red-ch))))
+       (entry/create-log-entry :nrepl-msg 2))
+      (extensions/write-log-entry
+       (:log env)
+       (entry/create-log-entry :nrepl-msg 3))
+      (extensions/write-log-entry
+       (:log env)
+       (entry/create-log-entry :nrepl-msg :done))
+      (is (= (a/<!! r-ch) [1 2 3 :done])))))
