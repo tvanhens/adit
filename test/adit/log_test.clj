@@ -44,10 +44,12 @@
 (deftest write-to-log
   (testing "writing nrepl messages to the log"
     (let [ch (a/chan 10 (filter (comp #{:nrepl-msg} :fn)))
+          ;; Subscribe replays all commands, can use this to
+          ;; coordinate the number of available nrepl targets.
           {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
           r-ch (a/reduce (fn [acc x]
                            (when (= :done (:args x))
-                                     (a/close! ch))
+                             (a/close! ch))
                            (conj acc (:args x)))
                          [] ch)]
       (extensions/write-log-entry
