@@ -8,5 +8,8 @@
 
 (defn start-server [peer-config nrepl-config]
   (apply nrepl/start-server
-         (merge nrepl-config
-                {:handler (server/log-handler peer-config)})))
+       (mapcat identity
+               (merge nrepl-config
+                      {:handler (server/log-handler peer-config)}))))
+
+
