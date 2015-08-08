@@ -3,13 +3,10 @@
             [onyx.extensions :as extensions]
             [onyx.log.entry :as entry]))
 
-(defn throw-unsupported []
-  (throw (Exception. "recv not supported for OnyxLog")))
-
 (defn onyx-log [log]
   (reify
     t/Transport
-    (recv [this] (throw-unsupported))
-    (recv [this timeout] (throw-unsupported))
     (send [this msg]
-      (extensions/write-log-entry log (entry/create-log-entry :nrepl-msg msg)))))
+      (extensions/write-log-entry
+       log (entry/create-log-entry
+            :nrepl-msg (merge msg {:direction :out}))))))

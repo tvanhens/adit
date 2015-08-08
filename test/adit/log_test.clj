@@ -1,5 +1,6 @@
 (ns adit.log-test
-  (:require [clojure.test :refer :all]
+  (:require [adit.core :as adit]
+            [clojure.test :refer :all]
             [clojure.core.async :as a]
             [clojure.tools.nrepl.transport :as t]
             [onyx.api :as onyx]
@@ -41,7 +42,7 @@
   (onyx/shutdown-peer-group @onyx-peer-group)
   (onyx/shutdown-env @onyx-env))
 
-(use-fixtures :once onyx-fixture)
+(use-fixtures :each onyx-fixture)
 
 (deftest log-transport-test
   (testing "writing nrepl messages to the log"
@@ -49,14 +50,38 @@
           ;; Subscribe replays all commands, can use this to
           ;; coordinate the number of available nrepl targets.
           {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
-          r-ch (a/reduce (fn [acc x]
-                           (when (= :done (:args x))
-                             (a/close! ch))
-                           (conj acc (:args x)))
+          r-ch (a/reduce (fn [acc msg]
+                           (let [next (conj acc (:args msg))]
+                             (when (>= (count next) 3)
+                               (a/close! ch))
+                             next))
                          [] ch)
           log-transport (transport/onyx-log (:log env))]
-      (t/send log-transport 1)
-      (t/send log-transport 2)
-      (t/send log-transport 3)
-      (t/send log-transport :done)
-      (is (= (a/<!! r-ch) [1 2 3 :done])))))
+      (t/send log-transport {:value 1})
+      (t/send log-transport {:value 2})
+      (t/send log-transport {:value 3})
+      (is (= (a/<!! r-ch)
+             [{:value 1 :direction :out}
+              {:value 2 :direction :out}
+              {:value 3 :direction :out}])))))
+
+#_(deftest log-nrepl-server-test
+  (testing "log nrepl server reads and evaluates from onyx log"
+    (let [close-fn (adit/log-nrepl-server (peer-config @onyx-id))
+          ch (a/chan 10 (filter (comp #{:nrepl-msg} :fn)))
+          {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
+          r-ch (a/reduce (fn [acc x]
+                           (conj acc (:args x)))
+                         [] ch)]
+      (try
+        (extensions/write-log-entry
+         (:log env)
+         (entry/create-log-entry :nrepl-msg
+                                 [{:direction :in
+                                   :id (str (java.util.UUID/randomUUID))
+                                   :op :eval
+                                   :code "(+ 2 2)"}]))
+        (a/<!! (a/timeout 3000))
+        (a/close! ch)
+        (>pprint (a/<!! r-ch))
+        (finally (close-fn))))))
