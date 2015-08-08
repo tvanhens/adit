@@ -41,7 +41,7 @@
 
 (use-fixtures :once onyx-fixture)
 
-(deftest write-to-log
+(deftest write-to-log-test
   (testing "writing nrepl messages to the log"
     (let [ch (a/chan 10 (filter (comp #{:nrepl-msg} :fn)))
           ;; Subscribe replays all commands, can use this to
