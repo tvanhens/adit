@@ -1,4 +1,4 @@
-(ns adit.core-testx
+(ns adit.core-test
   (:require [clojure.test :refer :all]
             [adit.core :refer :all]
             [clojure.tools.nrepl.server :as server]
