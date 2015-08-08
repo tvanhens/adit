@@ -17,7 +17,7 @@
         (map :args)
         (map #(dissoc % :direction))))
 
-(defn nrepl-leaf-server [peer-config]
+(defn log-nrepl-server [peer-config]
   (let [in-msg (a/chan 10 (->nrepl-msg-xf :in))
         {:keys [env]} (onyx/subscribe-to-log peer-config in-msg)]
     (a/go-loop []
