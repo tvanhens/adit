@@ -4,8 +4,7 @@
             [onyx.api :as onyx]
             [onyx.extensions :as extensions]
             [onyx.log.entry :as entry]
-            [onyx.log.curator :as curator]
-            [onyx.log.zookeeper :as zk]))
+            [onyx.log.commands.nrepl-msg]))
 
 (defn env-config [id]
   {:onyx/id id
@@ -45,8 +44,14 @@
 (deftest zk-test
   (testing "can grab information from zookeeper"
     (let [ch (a/chan 10)
-          {:keys [log]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
+          {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
           red-ch (a/reduce (fn [_ x] (>pprint x)) nil ch)]
+      (extensions/write-log-entry
+       (:log env)
+       (entry/create-log-entry :nrepl-msg "blah 1"))
+      (extensions/write-log-entry
+       (:log env)
+       (entry/create-log-entry :nrepl-msg "blah 2"))
       (a/<!! (a/timeout 5000))
       (a/close! ch)
       (a/<!! red-ch))))
