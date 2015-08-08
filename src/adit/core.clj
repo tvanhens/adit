@@ -2,15 +2,27 @@
   (:require [onyx.api :as api]
             [clojure.core.async :as a]
             [clojure.tools.nrepl.server :as nrepl]
+            [clojure.tools.nrepl.transport :as t]
             [onyx.nrepl.server :as server]
             [onyx.nrepl.transport :as transport]
             [onyx.api :as onyx]))
 
-(defn close-and-drain [ch]
+(comment
+  (nrepl/handle* 
+   {:id (str (java.util.UUID/randomUUID))
+    :op "eval"
+    :code "(+ 1 1)"}
+   (nrepl/default-handler)
+   (reify
+     t/Transport
+     (send [this msg] (println msg))))
+  )
+
+(defn- close-and-drain [ch]
   (a/close! ch)
   (a/reduce (constantly nil) nil ch))
 
-(defn nrepl-msg-xf [direction]
+(defn- nrepl-msg-xf [direction]
   {:pre [(#{:in :out} direction)]}
   (comp (filter (comp #{:nrepl-msg} :fn))
         (filter (comp #{direction} :direction :args))
