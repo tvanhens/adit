@@ -1,9 +1,11 @@
 (ns adit.log-test
   (:require [clojure.test :refer :all]
             [clojure.core.async :as a]
+            [clojure.tools.nrepl.transport :as t]
             [onyx.api :as onyx]
             [onyx.extensions :as extensions]
             [onyx.log.entry :as entry]
+            [onyx.nrepl.transport :as transport]
             [onyx.log.commands.nrepl-msg]))
 
 (defn env-config [id]
@@ -41,7 +43,7 @@
 
 (use-fixtures :once onyx-fixture)
 
-(deftest write-to-log-test
+(deftest log-transport-test
   (testing "writing nrepl messages to the log"
     (let [ch (a/chan 10 (filter (comp #{:nrepl-msg} :fn)))
           ;; Subscribe replays all commands, can use this to
@@ -51,17 +53,10 @@
                            (when (= :done (:args x))
                              (a/close! ch))
                            (conj acc (:args x)))
-                         [] ch)]
-      (extensions/write-log-entry
-       (:log env)
-       (entry/create-log-entry :nrepl-msg 1))
-      (extensions/write-log-entry
-       (:log env)
-       (entry/create-log-entry :nrepl-msg 2))
-      (extensions/write-log-entry
-       (:log env)
-       (entry/create-log-entry :nrepl-msg 3))
-      (extensions/write-log-entry
-       (:log env)
-       (entry/create-log-entry :nrepl-msg :done))
+                         [] ch)
+          log-transport (transport/onyx-log (:log env))]
+      (t/send log-transport 1)
+      (t/send log-transport 2)
+      (t/send log-transport 3)
+      (t/send log-transport :done)
       (is (= (a/<!! r-ch) [1 2 3 :done])))))
