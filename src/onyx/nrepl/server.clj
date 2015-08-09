@@ -7,7 +7,6 @@
 
 (defn log-handler [peer-config]
   (fn handler [msg]
-    (println "got here")
     (let [send-ch
           (a/chan 10 (comp (filter (comp (partial = :nrepl-msg-send) :fn))
                            (filter (comp (partial = (:id msg)) :id :args))))
@@ -22,8 +21,6 @@
         (a/close! send-ch))
 
       (a/go
-        (println "gathering")
         (let [transport (:transport msg)
               msg (a/<! (a/reduce conj [] send-ch))]
-          (println "sending" msg)
           (t/send transport (assoc msg :transport transport)))))))

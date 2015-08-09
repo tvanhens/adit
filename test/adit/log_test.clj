@@ -65,26 +65,31 @@
              (mapv #(assoc % :direction :out) msgs))))))
 
 ;; Working but strange zookeeper error. Need to make a simple req/resp
-;; tests to evaluate some clojure code... Check for :statue #{:done}
+;; tests to evaluate some clojure code... Check for :status #{:done}
 (deftest log-nrepl-server-test
   (testing "log nrepl server reads and evaluates from onyx log"
     (let [close-fn (adit/log-nrepl-server (peer-config @onyx-id))
-          ch (a/chan 10 (filter (comp #{:nrepl-msg} :fn)))
+          ch (a/chan 10
+                     (comp (filter (comp #{:nrepl-msg} :fn))
+                           (filter (comp #{:out} :direction :args))))
           {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
           r-ch (a/reduce (fn [acc msg]
-                           (println msg))
+                           (when (-> msg :args :status #{#{:done}})
+                             (a/close! ch))
+                           (conj acc (:args msg)))
                          [] ch)]
-      (extensions/write-log-entry
-       (:log env)
-       (entry/create-log-entry :nrepl-msg
-                               {:direction :in
-                                :id (str (java.util.UUID/randomUUID))
-                                :op "eval"
-                                :code "(+ 2 2)"}))
-      (a/<!! (a/timeout 10000))
-      (a/close! ch)
-      (close-fn)
-      #_(try
-        
-          (>pprint (a/<!! r-ch))
-          (finally (close-fn))))))
+      (try
+        (extensions/write-log-entry
+         (:log env)
+         (entry/create-log-entry :nrepl-msg
+                                 {:direction :in
+                                  :id (str (java.util.UUID/randomUUID))
+                                  :op "eval"
+                                  :code "(+ 2 2)"}))
+        (let [result (a/<!! r-ch)]
+          (are [cursor v] (= (get-in result cursor) v)
+            [0 :value] "4"
+            [0 :direction] :out
+            [1 :status] #{:done}
+            [1 :direction] :out))
+        (close-fn)))))

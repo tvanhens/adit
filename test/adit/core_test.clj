@@ -25,5 +25,4 @@
         (let [client (repl/client conn 1000)]
           (-> client
               (repl/message {:op :eval :code "(in-ns 'adit.core-test)"})
-              doall
-              clojure.pprint/pprint))))))
+              doall))))))

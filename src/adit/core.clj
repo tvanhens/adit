@@ -7,17 +7,6 @@
             [onyx.nrepl.transport :as transport]
             [onyx.api :as onyx]))
 
-(comment
-  (nrepl/handle* 
-   {:id (str (java.util.UUID/randomUUID))
-    :op "eval"
-    :code "(+ 1 1)"}
-   (nrepl/default-handler)
-   (reify
-     t/Transport
-     (send [this msg] (println msg))))
-  )
-
 (defn- close-and-drain [ch]
   (a/close! ch)
   (a/reduce (constantly nil) nil ch))
