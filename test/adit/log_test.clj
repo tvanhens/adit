@@ -50,16 +50,17 @@
           ;; Subscribe replays all commands, can use this to
           ;; coordinate the number of available nrepl targets.
           {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
+          msgs [{:value 1}
+                {:value 2}
+                {:value 3}]
           r-ch (a/reduce (fn [acc msg]
                            (let [next (conj acc (:args msg))]
-                             (when (>= (count next) 3)
+                             (when (>= (count next) (count msgs))
                                (a/close! ch))
                              next))
                          [] ch)
           log-transport (transport/onyx-log (:log env))]
-      (t/send log-transport {:value 1})
-      (t/send log-transport {:value 2})
-      (t/send log-transport {:value 3})
+      (doseq [msg msgs] (t/send log-transport msg))
       (is (= (a/<!! r-ch)
              [{:value 1 :direction :out}
               {:value 2 :direction :out}
