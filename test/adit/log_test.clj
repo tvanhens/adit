@@ -79,13 +79,10 @@
                            (conj acc (:args msg)))
                          [] ch)]
       (try
-        (extensions/write-log-entry
-         (:log env)
-         (entry/create-log-entry :nrepl-msg
-                                 {:direction :in
-                                  :id (str (java.util.UUID/randomUUID))
-                                  :op "eval"
-                                  :code "(+ 2 2)"}))
+        (adit/broadcast-msg
+         (:log env) {:id (str (java.util.UUID/randomUUID))
+                     :op "eval"
+                     :code "(+ 2 2)"})
         (let [result (a/<!! r-ch)]
           (are [cursor v] (= (get-in result cursor) v)
             [0 :value] "4"
