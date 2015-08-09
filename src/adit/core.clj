@@ -55,4 +55,6 @@
   (apply nrepl/start-server
        (mapcat identity
                (merge nrepl-config
-                      {:handler (server/log-handler peer-config)}))))
+                      {:handler (log-handler peer-config 1000)}))))
+
+(defn stop-server [server] (nrepl/stop-server server))
