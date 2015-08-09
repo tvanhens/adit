@@ -52,3 +52,13 @@
  :created-at 1439054631747}
  :created-at 1439054631713}
 ```
+
+# Repl response
+
+``` clojure
+{:fn :nrepl-msg, :args {:direction :in, :id eb5b1e17-c866-4708-9ecf-de5e4d5c0e71, :op eval, :code (+ 2 2)}, :message-id 7, :created-at 1439082318255}
+
+{:fn :nrepl-msg, :args {:id eb5b1e17-c866-4708-9ecf-de5e4d5c0e71, :session f457dbed-feb1-4cfa-bf88-ef375b6e747f, :value 4, :ns user, :direction :out}, :message-id 8, :created-at 143908231861}
+
+{:fn :nrepl-msg, :args {:id eb5b1e17-c866-4708-9ecf-de5e4d5c0e71, :session f457dbed-feb1-4cfa-bf88-ef375b6e747f, :status #{:done}, :direction :out}, :message-id 9, :created-at 1439082318264}
+```

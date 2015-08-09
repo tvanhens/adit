@@ -64,6 +64,8 @@
       (is (= (a/<!! r-ch)
              (mapv #(assoc % :direction :out) msgs))))))
 
+;; Working but strange zookeeper error. Need to make a simple req/resp
+;; tests to evaluate some clojure code... Check for :statue #{:done}
 (deftest log-nrepl-server-test
   (testing "log nrepl server reads and evaluates from onyx log"
     (let [close-fn (adit/log-nrepl-server (peer-config @onyx-id))
