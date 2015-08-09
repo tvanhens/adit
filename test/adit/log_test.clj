@@ -64,23 +64,25 @@
       (is (= (a/<!! r-ch)
              (mapv #(assoc % :direction :out) msgs))))))
 
-#_(deftest log-nrepl-server-test
+(deftest log-nrepl-server-test
   (testing "log nrepl server reads and evaluates from onyx log"
     (let [close-fn (adit/log-nrepl-server (peer-config @onyx-id))
           ch (a/chan 10 (filter (comp #{:nrepl-msg} :fn)))
           {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
-          r-ch (a/reduce (fn [acc x]
-                           (conj acc (:args x)))
+          r-ch (a/reduce (fn [acc msg]
+                           (println msg))
                          [] ch)]
-      (try
-        (extensions/write-log-entry
-         (:log env)
-         (entry/create-log-entry :nrepl-msg
-                                 [{:direction :in
-                                   :id (str (java.util.UUID/randomUUID))
-                                   :op :eval
-                                   :code "(+ 2 2)"}]))
-        (a/<!! (a/timeout 3000))
-        (a/close! ch)
-        (>pprint (a/<!! r-ch))
-        (finally (close-fn))))))
+      (extensions/write-log-entry
+       (:log env)
+       (entry/create-log-entry :nrepl-msg
+                               {:direction :in
+                                :id (str (java.util.UUID/randomUUID))
+                                :op "eval"
+                                :code "(+ 2 2)"}))
+      (a/<!! (a/timeout 10000))
+      (a/close! ch)
+      (close-fn)
+      #_(try
+        
+          (>pprint (a/<!! r-ch))
+          (finally (close-fn))))))

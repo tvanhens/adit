@@ -36,7 +36,8 @@
       (when-let [msg (a/<! in-msg)]
         (a/thread (nrepl/handle* msg
                                  (nrepl/default-handler)
-                                 (transport/onyx-log (:log env))))))
+                                 (transport/onyx-log (:log env))))
+        (recur)))
     ;; Return a function to close and drain the log channel
     (partial close-and-drain in-msg)))
 
