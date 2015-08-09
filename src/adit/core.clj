@@ -49,7 +49,7 @@
       (broadcast-msg (:log env) msg)
       (a/<!! (a/timeout wait-ms))
       (a/close! out-msg)
-      (t/send (:transport msg) (a/<!! r)))))
+      (doseq [m (a/<!! r)] (t/send (:transport msg) m)))))
 
 (defn start-server [peer-config nrepl-config]
   (apply nrepl/start-server
