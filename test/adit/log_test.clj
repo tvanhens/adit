@@ -62,9 +62,7 @@
           log-transport (transport/onyx-log (:log env))]
       (doseq [msg msgs] (t/send log-transport msg))
       (is (= (a/<!! r-ch)
-             [{:value 1 :direction :out}
-              {:value 2 :direction :out}
-              {:value 3 :direction :out}])))))
+             (mapv #(assoc % :direction :out) msgs))))))
 
 #_(deftest log-nrepl-server-test
   (testing "log nrepl server reads and evaluates from onyx log"
