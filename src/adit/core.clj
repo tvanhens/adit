@@ -6,7 +6,8 @@
             [onyx.nrepl.transport :as transport]
             [onyx.extensions :as extensions]
             [onyx.log.entry :as entry]
-            [onyx.api :as onyx]))
+            [onyx.api :as onyx]
+            [onyx.log.commands.nrepl-msg]))
 
 (defn- close-and-drain [ch]
   (a/close! ch)
@@ -58,3 +59,27 @@
                       {:handler (log-handler peer-config 1000)}))))
 
 (defn stop-server [server] (nrepl/stop-server server))
+
+(comment
+  ;; Can connect to this but cannot get a basic command to return
+  ;; Should log an example repl session with a logging-instrumented
+  ;; default handler to compare
+  (let [onyx-id (java.util.UUID/randomUUID)
+        peer-config
+        {:onyx/id onyx-id
+         :zookeeper/address "127.0.0.1:2188"
+         :onyx.peer/job-scheduler :onyx.job-scheduler/greedy
+         :onyx.messaging/impl :core.async
+         :onyx.messaging/bind-addr "localhost"}
+        env
+        (onyx/start-env
+         {:onyx/id onyx-id
+          :zookeeper/address "127.0.0.1:2188"
+          :zookeeper/server? true
+          :zookeeper.server/port 2188})
+        onyx-peer-group (onyx/start-peer-group peer-config)
+        onyx-peers (onyx/start-peers 5 onyx-peer-group)
+        s (log-nrepl-server peer-config)]
+    (start-server peer-config {:port 9000})
+    )
+  )
