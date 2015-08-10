@@ -40,7 +40,7 @@
 
 ;; Very primitive strategy... just wait-ms for repl eval results to
 ;; come back. Need to aggregate somehow
-(defn- log-handler [peer-config wait-ms]
+(defn log-handler [peer-config wait-ms]
   (fn [msg]
     (let [out-msg (a/chan 10 (comp (nrepl-msg-xf :out)
                                    (filter (comp #{(:id msg)} :id))))

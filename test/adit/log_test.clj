@@ -66,27 +66,22 @@
 
 ;; Working but strange zookeeper error. Need to make a simple req/resp
 ;; tests to evaluate some clojure code... Check for :status #{:done}
-(deftest log-nrepl-server-test
+(deftest log-nrepl-server-and-handler-test
   (testing "log nrepl server reads and evaluates from onyx log"
     (let [close-fn (adit/log-nrepl-server (peer-config @onyx-id))
-          ch (a/chan 10
-                     (comp (filter (comp #{:nrepl-msg} :fn))
-                           (filter (comp #{:out} :direction :args))))
-          {:keys [env]} (onyx/subscribe-to-log (peer-config @onyx-id) ch)
-          r-ch (a/reduce (fn [acc msg]
-                           (when (-> msg :args :status #{#{:done}})
-                             (a/close! ch))
-                           (conj acc (:args msg)))
-                         [] ch)]
+          handler (adit/log-handler (peer-config @onyx-id) 2000)
+          result (atom [])
+          transport (reify
+                      t/Transport
+                      (send [this msg]
+                        (swap! result conj msg)))]
       (try
-        (adit/broadcast-msg
-         (:log env) {:id (str (java.util.UUID/randomUUID))
-                     :op "eval"
-                     :code "(+ 2 2)"})
-        (let [result (a/<!! r-ch)]
-          (are [cursor v] (= (get-in result cursor) v)
-            [0 :value] "4"
-            [0 :direction] :out
-            [1 :status] #{:done}
-            [1 :direction] :out))
-        (close-fn)))))
+        (handler {:id (str (java.util.UUID/randomUUID))
+                  :op "eval"
+                  :code "(+ 2 2)"
+                  :transport transport})
+        (are [cursor v] (= (get-in @result cursor) v)
+          [0 :value] "4"
+          [1 :status] #{:done})
+        (finally
+          (close-fn))))))
